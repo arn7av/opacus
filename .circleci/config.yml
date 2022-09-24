@@ -515,13 +515,61 @@ aliases:
 
 workflows:
   commit:
+    when:
+      not:
+        equal: [ scheduled_pipeline, << pipeline.trigger_source >> ]
     jobs:
+      - lint_py37_torch_release:
+          filters: *exclude_ghpages
       - unittest_py37_torch_release:
           filters: *exclude_ghpages
+      - unittest_py38_torch_release:
+          filters: *exclude_ghpages
+      - unittest_py39_torch_release:
+          filters: *exclude_ghpages
       - unittest_py39_torch_nightly:
+          filters: *exclude_ghpages
+      - unittest_multi_gpu:
+          filters: *exclude_ghpages
+      - integrationtest_py37_torch_release_cpu:
+          filters: *exclude_ghpages
+      - integrationtest_py37_torch_release_cuda:
           filters: *exclude_ghpages
       - finish_coveralls_parallel:
           filters: *exclude_ghpages
           requires:
             - unittest_py37_torch_release
+            - unittest_py38_torch_release
+            - unittest_py39_torch_release
             - unittest_py39_torch_nightly
+            - unittest_multi_gpu
+
+  nightly:
+    when:
+      equal: [ scheduled_pipeline, << pipeline.trigger_source >> ]
+    jobs:
+      - unittest_py39_torch_nightly:
+          filters: *exclude_ghpages
+      - integrationtest_py37_torch_release_cpu:
+          filters: *exclude_ghpages
+      - integrationtest_py37_torch_release_cuda:
+          filters: *exclude_ghpages
+      - lint_py37_torch_release:
+          filters: *exclude_ghpages
+      - micro_benchmarks_py37_torch_release_cuda:
+          filters: *exclude_ghpages
+      - finish_coveralls_parallel:
+          filters: *exclude_ghpages
+          requires:
+            - unittest_py39_torch_nightly
+
+  website_deployment:
+    when:
+      not:
+        equal: [ scheduled_pipeline, << pipeline.trigger_source >> ]
+    jobs:
+      - auto_deploy_site:
+          filters:
+            branches:
+              only:
+                - main
